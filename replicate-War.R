@@ -102,10 +102,10 @@ for (i in 1:game_count) {
         limit = length(deck) / 2
         # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
         # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
-        # In this case, if in the last 26 plays the number of cards are within 1
+        # In this case, if in the last 52 plays the number of cards are within 1
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
-        # and will go on to infinity if we let it.
-        if (length(p1Cards) > limit && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
+        # and will last forever if we let it.
+        if (length(p1Cards) > length(deck) && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
             print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
             game$infinite=TRUE
             break
