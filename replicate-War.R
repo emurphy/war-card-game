@@ -10,7 +10,7 @@ library(sets)
 set.seed(1068)
 
 games <- data.frame(id=numeric(), strength=numeric(),strength_pct=numeric(), aces=numeric(),faces=numeric(),deuces=numeric(),plays=numeric(),infinite=logical(),result=character())
-deckSizes <- data.frame(id=numeric(),details=numeric())
+deckSizes <- data.frame(id=numeric(),play=numeric(),p1Cards=numeric())
 i <- 1
 game_count <- 100
 for (i in 1:game_count) {
@@ -99,7 +99,7 @@ for (i in 1:game_count) {
             break
         }
         # avoid infinite loop
-        if (length(p1Cards) > 10000) {
+        if (length(p1Cards) > 5000) {
             print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
             game$infinite=TRUE
             break
@@ -112,7 +112,9 @@ for (i in 1:game_count) {
     # war over
     
     
-    if (max(p1Cards)<52) {
+    if (game$infinite) {
+        game$result = "T"
+    } else if (max(p1Cards)<52) {
         p1Cards <-   -(p1Cards-52)
         game$result = "L"
     } else {
@@ -120,7 +122,7 @@ for (i in 1:game_count) {
     }
     
     games <- rbind(games,game)
-    deckSize <- data.frame(i,p1Cards)
+    deckSize <- data.frame(id=i,play=1:length(p1Cards),p1Cards=p1Cards)
     deckSizes <- rbind(deckSizes,deckSize)
     
 }
