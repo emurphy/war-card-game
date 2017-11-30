@@ -112,13 +112,15 @@ for (i in 1:game_count) {
     # war over
     
     
-    if (game$infinite) {
-        game$result = "T"
-    } else if (max(p1Cards)<52) {
-        p1Cards <-   -(p1Cards-52)
+    if (length(p1) == 0) {
+        #p1Cards <-   -(p1Cards-52)
         game$result = "L"
-    } else {
+    } else if (length(p1) == 52) {
         game$result = "W"
+    } else if (game$infinite) {
+        game$result = "T"
+    } else {
+        stop(paste("Unclear result with p1 cards: ", length(p1)))
     }
     
     games <- rbind(games,game)
