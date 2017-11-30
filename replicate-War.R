@@ -99,7 +99,7 @@ for (i in 1:game_count) {
             break
         }
         # avoid infinite loop
-        if (length(p1Cards) > 5000) {
+        if (length(p1Cards) > 2500) {
             print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
             game$infinite=TRUE
             break
