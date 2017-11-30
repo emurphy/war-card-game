@@ -16,6 +16,6 @@ grob <- arrangeGrob(p1, p2, p3, ncol=1)
 ggsave('hand_sizes.png', grob, device='png')
 
 # explore the ties as a sequence approaching the limit of 26
-ties$epsilon <- abs(ties$p1Cards - 26)
-p <- ggplot(data=ties, aes(x=play, y=epsilon)) + geom_line(color='#CC79A7') + ggtitle('In ties, number of cards more or less than 26')
+ties$diff <- abs(ties$p1Cards - 26)
+p <- ggplot(data=ties, aes(x=play, y=diff)) + geom_line(color='#CC79A7') + ggtitle('Ties converge to 26 cards')
 ggsave('tie_convergence.png', p, device='png')
