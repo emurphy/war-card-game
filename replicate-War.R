@@ -98,8 +98,12 @@ for (i in 1:game_count) {
         if(length(p1)==52|length(p1)==0){
             break
         }
-        # avoid infinite loop
-        if (length(p1Cards) > 2500) {
+        # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
+        # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
+        # In this case, if in the last 100 plays the number of cards are within 1
+        # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
+        # and will go on to infinity if we let it.
+        if (length(p1Cards) > 100 && all(tail(p1Cards, 100) %in% c(25,26,27))) {
             print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
             game$infinite=TRUE
             break
