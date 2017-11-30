@@ -9,9 +9,9 @@ wins <- merged[merged$result=='W',]
 losses <- merged[merged$result=='L',]
 ties <- merged[merged$result=='T',]
 #ggplot(data=merged, aes(x=play, y=p1Cards, group=result)) + geom_line(aes(color=result))
-p1 <- ggplot(data=wins, aes(x=play, y=cards)) + geom_line(color='#009E73', size=0.3) + ggtitle("Wins")
-p2 <- ggplot(data=losses, aes(x=play, y=cards)) + geom_line(color='#D55E00', size=0.3) + ggtitle("Losses")
-p3 <- ggplot(data=ties, aes(x=play, y=cards)) + geom_line(color='#F0E442', size=0.3) + ggtitle("Ties")
+p1 <- ggplot(data=wins, aes(x=play, y=cards)) + geom_line(color='#009E73', size=0.3) + ggtitle(paste(length(unique(wins[,'id'])), "Wins"))
+p2 <- ggplot(data=losses, aes(x=play, y=cards)) + geom_line(color='#D55E00', size=0.3) + ggtitle(paste(length(unique(losses[,'id'])), "Losses"))
+p3 <- ggplot(data=ties, aes(x=play, y=cards)) + geom_line(color='#F0E442', size=0.3) + ggtitle(paste(length(unique(ties[,'id'])), "Ties"))
 grob <- arrangeGrob(p1, p2, p3, ncol=1)
 ggsave('hand_sizes.png', grob, device='png')
 
