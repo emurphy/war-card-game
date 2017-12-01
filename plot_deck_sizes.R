@@ -4,8 +4,8 @@ library(dplyr)
 library(plyr)
 
 # plot number of cards in hand over the course of games
-deck_sizes <- read.csv("deckSizes5000random.csv")
-games <- read.csv("games5000random.csv")
+deck_sizes <- read.csv("deckSizes10000random.csv")
+games <- read.csv("games10000random.csv")
 merged = merge(deck_sizes, games, by = 'id')
 merged$cards = merged$p1Cards
 wins <- merged[merged$result=='W',]
