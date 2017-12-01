@@ -12,7 +12,7 @@ set.seed(1068)
 games <- data.frame(id=numeric(), strength=numeric(),strength_pct=numeric(), aces=numeric(),faces=numeric(),deuces=numeric(),plays=numeric(),infinite=logical(),result=character())
 deckSizes <- data.frame(id=numeric(),play=numeric(),p1Cards=numeric())
 i <- 1
-game_count <- 100
+game_count <- 5000
 for (i in 1:game_count) {
     # create a regular deck.
     # All suits are equivalent so there will be four of each number
@@ -98,14 +98,8 @@ for (i in 1:game_count) {
         if(length(p1)==52|length(p1)==0){
             break
         }
-        
-        limit = length(deck) / 2
-        # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
-        # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
-        # In this case, if in the last 52 plays the number of cards are within 1
-        # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
-        # and will last forever if we let it.
-        if (length(p1Cards) > length(deck) && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
+        # avoid infinite loop
+        if (length(p1Cards) > 5000) {
             print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
             game$infinite=TRUE
             break
