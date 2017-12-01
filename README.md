@@ -16,4 +16,4 @@ To come are scripts to explore probabilities of winning.
 
 ## Markov process
 
-We construct a 52 x 52 matrix. Each cell has a probability of a hand going from x number of cards to x +/- y number of cards. By exponentiating the matrix, we can calculate the probability of the hand winning.
+We construct a 53 x 53 matrix. Each cell in row i, column j has a probability of a hand going from i number of cards to j number of cards. By exponentiating the matrix, we can calculate the probability of the hand winning.
