@@ -1,7 +1,7 @@
 library(ggplot2)
 library(gridExtra)
-library(dplyr)
 library(plyr)
+library(dplyr)
 
 # plot number of cards in hand over the course of games
 deck_sizes <- read.csv("deckSizes5000random.csv")
