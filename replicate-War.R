@@ -106,7 +106,12 @@ for (i in 1:game_count) {
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
         # and will last forever if we let it.
         if (length(p1Cards) > length(deck) && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
-            print(paste("Infinite game, cards: ", length(p1Cards), ", plays: ", game$plays))
+            print(paste("Infinite game:", game$id, ", plays:", game$plays))
+            game$infinite=TRUE
+            break
+        }
+        else if (length(p1Cards) > 5000) {
+            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays))
             game$infinite=TRUE
             break
         }
