@@ -26,10 +26,10 @@ for (i in 1:game_count) {
     p2 <- rep(unlist(diffs), times=gset_memberships(diffs))
     # this produces the right cards but in order so randomize
     assign("p2", sample(p2,26, replace=FALSE))
-    p1
+    #p1
     # [1]  3  3  6 14 10 13  3 10 12  5 11  8  2  5  8  4 10  5  8  4
     # [21]  8  7  7  7  9 14
-    p2
+    #p2
     # [1] 12  6  9  5  9  9 13  4  2 14  4 13 13  6  6 11  7 11 12  2
     # [21] 10  3  2 11 12 14
     p1Cards <- length(p1)
@@ -99,19 +99,27 @@ for (i in 1:game_count) {
             break
         }
         
-        limit = median(tail(p1Cards,length(deck)))
+        limit = length(deck) / 2
+        lastCycleHandSizes = tail(p1Cards,length(deck))
         # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
         # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
         # In this case, if in the last 26 plays the number of cards are within 1
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
         # and will last forever if we let it.
-        if (length(p1Cards) >= length(deck) && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
-            print(paste("Infinite game:", game$id, ", limit:", limit, "plays:", game$plays))
+        if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
+            print(paste("Infinite game:", game$id, "plays:", game$plays))
             game$infinite=TRUE
             break
         }
+        #else if (length(p1Cards) > length(deck) && max(lastCycleHandSizes) - min(lastCycleHandSizes) == 1) {
+        #    print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", c(lastCycleHandSizes), collapse=' ')))
+            #print(paste("Original hands:", c(p1, p2)))
+        #    game$infinite=TRUE
+        #    break
+        #}
         else if (length(p1Cards) > 5000) {
-            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "median:", limit, "last card counts:", tail(p1Cards,length(deck))))
+            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", c(lastCycleHandSizes), collapse=' '))
+            #print(paste("Original hands:", c(p1, p2)))
             game$infinite=TRUE
             break
         }
