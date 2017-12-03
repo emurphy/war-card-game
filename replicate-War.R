@@ -79,13 +79,13 @@ for (i in 1:game_count) {
                 p2 <- p2[-(1:4)]
             }
             
-            draw <- c(p1[1],p2[1])
+            draw <- sample(c(p1[1],p2[1]))
             
             if (p1[1]>p2[1]) {
-                p1 <- c(p1[-1],booty,draw)
+                p1 <- c(p1[-1],sample(booty),draw)
                 p2 <- p2[-1]
             } else {
-                p2 <- c(p2[-1],booty,draw)
+                p2 <- c(p2[-1],sample(booty),draw)
                 p1 <- p1[-1]
             }
         }
