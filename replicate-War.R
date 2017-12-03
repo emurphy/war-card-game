@@ -50,18 +50,18 @@ for (i in 1:game_count) {
         game$plays <- game$plays + 1
         if (p1[1]>p2[1]) {
             if (p1[1]==14&p2[1]==2){ #  ace(14) vs a 2
-                p2 <- c(p2[-1],draw)
+                p2 <- c(p2[-1],sample(draw))
                 p1 <- p1[-1]
             } else {
-                p1 <- c(p1[-1],draw)
+                p1 <- c(p1[-1],sample(draw))
                 p2 <- p2[-1]
             }
         } else if (p2[1]>p1[1]) {
             if (p2[1]==14&p1[1]==2){
-                p1 <- c(p1[-1],draw)
+                p1 <- c(p1[-1],sample(draw))
                 p2 <- p2[-1]
             } else {
-                p2 <- c(p2[-1],draw)
+                p2 <- c(p2[-1],sample(draw))
                 p1 <- p1[-1]
             }
         } else {
@@ -79,13 +79,13 @@ for (i in 1:game_count) {
                 p2 <- p2[-(1:4)]
             }
             
-            draw <- sample(c(p1[1],p2[1]))
+            draw <- c(p1[1],p2[1])
             
             if (p1[1]>p2[1]) {
-                p1 <- c(p1[-1],sample(booty),draw)
+                p1 <- c(p1[-1],sample(booty),sample(draw))
                 p2 <- p2[-1]
             } else {
-                p2 <- c(p2[-1],sample(booty),draw)
+                p2 <- c(p2[-1],sample(booty),sample(draw))
                 p1 <- p1[-1]
             }
         }
@@ -95,7 +95,7 @@ for (i in 1:game_count) {
         p1Cards <- c(p1Cards,length(p1))
         
         # test for game over
-        if(length(p1)==52|length(p1)==0){
+        if(length(p1)==52 || length(p1)==0){
             break
         }
         
@@ -107,20 +107,19 @@ for (i in 1:game_count) {
         # In this case, if in the last 26 plays the number of cards are within 1
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
         # and will last forever if we let it.
-        if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
-            print(paste("Infinite game:", game$id, "plays:", game$plays, 
-                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
-            game$infinite=TRUE
-            break
-        }
-        else if (length(p1Cards) > length(deck) && max(last10CycleHandSizes) - min(last10CycleHandSizes) == 1) {
+        #if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
+        #    print(paste("Infinite game:", game$id, "plays:", game$plays, 
+        #                "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
+        #    game$infinite=TRUE
+        #    break
+        #} else
+        if (length(p1Cards) > length(deck) && max(last10CycleHandSizes) - min(last10CycleHandSizes) == 1) {
             print(paste("Infinite game caught by 10-cycle limit, game:", game$id, ", plays:", 
                         game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
                         "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
             game$infinite=TRUE
             break
-        }
-        else if (length(p1Cards) > 5000) {
+        } else if (length(p1Cards) > 10000) {
             print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
                         "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
             game$infinite=TRUE
