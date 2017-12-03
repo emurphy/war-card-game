@@ -101,20 +101,19 @@ for (i in 1:game_count) {
         
         limit = length(deck) / 2
         lastCycleHandSizes = tail(p1Cards,length(deck))
-        last4CycleHandSizes = tail(p1Cards,length(deck)*4)
+        last10CycleHandSizes = tail(p1Cards,length(deck)*10)
         # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
         # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
         # In this case, if in the last 26 plays the number of cards are within 1
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
         # and will last forever if we let it.
         if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
-            print(paste("Infinite game:", game$id, "plays:", game$plays))
+            print(paste("Infinite game:", game$id, "plays:", game$plays, "Original hands:", paste(c(p1, p2), collapse=',')))
             game$infinite=TRUE
             break
         }
-        else if (length(p1Cards) > length(deck) && max(last4CycleHandSizes) - min(last4CycleHandSizes) == 1) {
-            print(paste("Infinite game caught by 4-cycle limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=',')))
-            print(paste("Original hands:", paste(c(p1, p2), collapse=',')))
+        else if (length(p1Cards) > length(deck) && max(last10CycleHandSizes) - min(last10CycleHandSizes) == 1) {
+            print(paste("Infinite game caught by 10-cycle limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), "Original hands:", paste(c(p1, p2), collapse=',')))
             game$infinite=TRUE
             break
         }
