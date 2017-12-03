@@ -111,7 +111,7 @@ for (i in 1:game_count) {
             break
         }
         else if (length(p1Cards) > 5000) {
-            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays))
+            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "median:", limit, "last card counts:", tail(p1Cards,length(deck))))
             game$infinite=TRUE
             break
         }
