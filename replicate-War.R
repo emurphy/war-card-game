@@ -108,18 +108,21 @@ for (i in 1:game_count) {
         # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
         # and will last forever if we let it.
         if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
-            print(paste("Infinite game:", game$id, "plays:", game$plays, "Original hands:", paste(c(p1, p2), collapse=',')))
+            print(paste("Infinite game:", game$id, "plays:", game$plays, 
+                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
             game$infinite=TRUE
             break
         }
         else if (length(p1Cards) > length(deck) && max(last10CycleHandSizes) - min(last10CycleHandSizes) == 1) {
-            print(paste("Infinite game caught by 10-cycle limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), "Original hands:", paste(c(p1, p2), collapse=',')))
+            print(paste("Infinite game caught by 10-cycle limit, game:", game$id, ", plays:", 
+                        game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
+                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
             game$infinite=TRUE
             break
         }
         else if (length(p1Cards) > 5000) {
-            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=',')))
-            print(paste("Original hands:", paste(c(p1, p2), collapse=',')))
+            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
+                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
             game$infinite=TRUE
             break
         }
