@@ -30,14 +30,16 @@ M8 <- M4 %*% M4
 v26 <- numeric(53)
 v26[27] <- 1
 M8 %*% v26
-M64 <- M8 %*% M8 %*% M8 %*% M8
-M64 %*% v26
-winProbability(M, 10, 26)
-winProbability(M, 100, 26)
-winProbability(M, 1000, 26)
-winProbability(M, 1, 1)
-winProbability(M, 10, 1)
-winProbability(M, 1000, 1)
-winProbability(M, 1, 51)
-winProbability(M, 10, 51)
-winProbability(M, 100, 51)
+M32 <- M8 %*% M8 %*% M8 %*% M8
+M32 %*% v26
+winProbability(M1, 10, 26)
+winProbability(M1, 100, 26)
+winProbability(M1, 1000, 26)
+winProbability(M1, 1, 1)
+winProbability(M1, 10, 1)
+winProbability(M1, 1000, 1)
+winProbability(M1, 1, 51)
+winProbability(M1, 10, 51)
+winProbability(M1, 100, 51)
+winProbability(M1, 10, 13)
+winProbability(M1, 10, 39)
