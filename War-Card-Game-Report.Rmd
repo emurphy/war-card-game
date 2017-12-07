@@ -1,0 +1,96 @@
+---
+title: "War Card Game"
+author: "Maggie Ji and Emmet Murphy"
+date: "12/7/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Real World Application: Bayesian Updating in a State of War
+
+So far, our simulations of the card game have assumed that the deck held by each player is randomly drawn, so that neither player knows (1) whether the decks are unequal; and (2) who has the better deck. This begs the question: is it possible to use the information provided by the already revealed cards to make inferences about the strength of a player's deck? _POINT: Includes two related but distinct topics_.
+
+Indeed, in real-world situations that are analogous to this simple card game, a key first step is to assess the position of your opponent, relative to your own position. _POINT: Project is related to a topic that you have studied in another course this term: API-302 Analytic Frameworks for Policy_. Take the case of the U.S. and North Korea as an example. In the face of escalating tensions, each side is desperately trying to figure out what "deck of cards" the other holds, in terms of nuclear capabilities. Although there is not officially a state of war, there are sufficiently many small-scale movements by each side, through which information can be collected. Repeated interactions between the U.S. and North Korea, in the form of diplomatic relations, missile testing, and military demonstrations, could reveal much about each country's true capabilities. 
+
+For ease of demonstration, we will make the simplifying assumption that there is no bluffing or strategic omission of information involved on either side (which is admittedly unrealistic). Therefore, the outcome of each interaction is purely based on a random draw from each country's true distribution of military strength (i.e. their "deck of cards"). 
+
+### How Bayesian Updating Works
+
+To start, let's assume that the U.S. holds an infinite arsenal of weapons ranging in power from 1 to 10. North Korea could either have a stronger arsenal, of weapons ranging between 6 and 10 in power, or a weaker arsenal, of weapons ranging between 1 and 5. Through repeated interactions in the form of small interactions, the U.S. can use Bayesian updating to inform its perception of the true range of North Korea's nuclear arsenal. 
+
+R CODE: CONDITIONAL PROBABILITIES
+
+As shown by these permutation tests: 
+
+(A) If North Korea has a relatively weaker arsenal, then the U.S. would win 70 percent of the small-scale conflicts, lose 20 percent of the time, and tie with North Korea during the remaining 10 percent of conflicts: $p(win | weaker) = 0.7, p(lose | weaker) = 0.2, p(tie | weaker) = 0.1$ 
+
+(B) However, if North Korea has a relatively stronger arsenal, then the probabilities are reversed: $p(win | stronger) = 0.2, p(lose | stronger) = 0.7, p(tie | stronger) = 0.1$ 
+
+Say that the U.S. starts with no knowledge of North Korea's true strength, such that it is equally possible that it has a stronger arsenal or a weaker arsenal. In other words, the U.S. holds the prior that $p(weaker)=0.5$ and $p(stronger)=1-p(weaker)=0.5$. (Note here that we can focus on only  $p(weaker)$ without loss of information, since $p(stronger)=1-p(weaker)$.) 
+
+If a small military conflict erupts in the DMZ between U.S. troops and North Korean forces, then the U.S. can update its perception of North Korea's likely strength, based on the outcome of that conflict: 
+(1) If the U.S. wins, then $p(weaker | win)$ becomes the new prior, rather than 0.5: 
+$p(weaker | win)= \frac{p(win | weaker) p(weaker)}{p(win)}$
+$= \frac{p(win | weaker) p(weaker)}{p(win|weaker)p(weaker)+p(win|stronger)p(stronger)} = \frac{0.7*0.5}{0.7*0.5+0.2*0.5}$ 
+
+(2) If the U.S. loses, then $p(weaker | lose)$ becomes the new prior, rather than 0.5: 
+$p(weaker | lose)= \frac{p(lose | weaker) p(weaker)}{p(lose)}$ 
+$= \frac{p(lose | weaker) p(weaker)}{p(lose|weaker)p(weaker)+p(lose|stronger)p(stronger)} = \frac{0.2*0.5}{0.2*0.5+0.7*0.5}$ 
+
+(3) If there is a tie, then $p(weaker | tie)$ becomes the new prior (in this particular case, it is still 0.5): 
+$p(weaker | tie)= \frac{p(tie | weaker) p(weaker)}{p(tie)}$ 
+$= \frac{p(tie | weaker) p(weaker)}{p(tie|weaker)p(weaker)+p(tie|stronger)p(stronger)} = \frac{0.1*0.5}{0.1*0.5+0.1*0.5}$ 
+
+To generalize, we can define a sequence of updated priors as:
+$P= \left\{ p_1, p_2, p_3, ... \right\} = \left\{ p_n | n \in \mathbb{R} \right\}$ where $n$ denotes the $n$th small-scale conflict.
+This is a somewhat complicated sequence, where $p_n=f(p_{n-1})$ is a different function for each possible outcome:
+$p_n=\frac{0.7p_{n-1}}{0.7p_{n-1}+0.2(1-p_{n-1})}$ if the U.S. wins in the $n$th conflict;
+$p_n=\frac{0.2p_{n-1}}{0.2p_{n-1}+0.7(1-p_{n-1})}$ if the U.S. loses in the $n$th conflict;
+and $p_n=\frac{0.1p_{n-1}}{0.1p_{n-1}+0.1(1-p_{n-1})}$ if there is a tie in the $n$th conflict. 
+
+R CODE: SINGLE SIMULATION OF BAYESIAN UPDATING 
+
+In this example, a sequence of randomly drawn outcomes is simulated based on underlying "true" distributions where the U.S. has a stronger arsenal than North Korea. Here, the sequence of updated Bayesian probabilities are as follows:
+$$p_0=0.0000000$$
+$$p_1=0.7777778$$
+$$p_2=0.9245283$$
+$$p_3=0.9772080$$
+$$p_4=0.9933802$$
+$$p_5=0.9980996$$
+$$\dots$$
+$$p_{14}=1.0000000$$
+$$\dots$$
+
+### Convergence to Underlying Distribution
+
+In the previous simulation, the sequence $P$ of Bayesian updated probabilities converges to 1 around the 14th trial, reflecting the true underlying distribution (i.e. that the U.S. has a stronger arsenal). Is this always the case? 
+
+Let us represent the process of Bayesian updating using terminology from Math 23A. _POINT: Incorporates ideas both from linear algebra and from real analysis_. The updating function depends on the outcome of each interaction, such that it can be represented as: 
+$$p_n=[\vec{\mathbf{B}}] \vec{v_n} (p_{n-1})$$
+where $\vec{\mathbf{B}}=\begin{bmatrix} f_{win} & f_{lose} & f_{tie} \end{bmatrix}=\begin{bmatrix} \frac{0.7*p}{0.7*p+0.2*(1-p)} & \frac{0.2*p}{0.2*p+0.7*(1-p)}  & \frac{0.1*p}{0.1*p+0.1*(1-p)}  \end{bmatrix}$
+and $\vec{v_n}=\begin{bmatrix} win \\ lose \\ tie \end{bmatrix}$ represents the outcome of each interaction. 
+
+For example, the outcome where the U.S. wins would be represented as $\vec{v_n}=\begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix}$, with the updating function $[\vec{\mathbf{B}}] \vec{v_n} (p_{n-1})=\begin{bmatrix} f_{win} & f_{lose} & f_{tie} \end{bmatrix} \begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix} = f_{win} = \frac{0.7*p_{n-1}}{0.7*p_{n-1}+0.2*(1-p_{n-1})}$. 
+
+In general, after $k$ number of interactions, the updated prior would be some function of the initial starting prior $p_0$, depending on how the sequence of outcomes turns out from the interactions: 
+$$p_k=[\vec{\mathbf{B}}] \vec{v_k} [\vec{\mathbf{B}}] \vec{v_{k-1}} \dots [\vec{\mathbf{B}}] \vec{v_1} (p_0)$$
+
+There are two useful properties of this sequence, that make Bayesian updating useful: 
+
+(A) The marginal value of information diminishes with each interaction, such that there is an optimal stopping point after a finite number of interactions:
+$$\lim_{n\to\infty} p_n-p_{n-1} = \lim_{n\to\infty} ([\vec{\mathbf{B}}] \vec{v_n} \dots [\vec{\mathbf{B}}] \vec{v_1} (p_0)) - ([\vec{\mathbf{B}}] \vec{v_{n-1}} \dots [\vec{\mathbf{B}}] \vec{v_1} (p_0)) = 0 $$
+$\Rightarrow \exists k<\infty$ s.t. $[\vec{\mathbf{B}}] \vec{v_n} \dots [\vec{\mathbf{B}}] \vec{v_1} (p_0) \approx [\vec{\mathbf{B}}] \vec{v_{n-1}} \dots [\vec{\mathbf{B}}] \vec{v_1}$
+$\Rightarrow [\vec{\mathbf{B}}] \vec{v_n} \approx \mathbf{I}$. 
+
+(B) The sequence converges to a certainty (i.e. either $p=0$ or $p=1$) that reflects the true underlying difference in the distribution of military weapons between the two countries. 
+$$\lim_{n\to\infty} p_n = s,  s\in{0,1}$$
+
+These two properties can be observed using the following R code, where we simulate different $p_n$ sequences that draw from a range of underlying differences between the distribution of weapons possessed by each side. 
+ 
+R CODE: MULTIPLE SIMULATIONS OF BAYESIAN UPDATING 
+
+These plots illustrate a key takeaway that, with underlying distributions that closely resemble each other (i.e. the U.S. and North Korea are similarly matched), it requires a higher number of $n$ interactions for the sequence of posteriors to converge to certainty. In real life, since such interactions and confrontations are risky and costly, it makes sense to minimize $n$. As much information as possible should be extracted from the resulting $p_n$, not only in terms of whether $p_n$ is closer to 0 or to 1 (which informs which country is stronger), but also how far it is from 0 or 1 (the farther away it is, the more likely that the sequence would take lots of interactions to converge, suggesting that the two countries are more evenly matched).
+
