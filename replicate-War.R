@@ -3,6 +3,7 @@
 # and http://www.premiersoccerstats.com/wordpress/?p=825&utm_source=rss&utm_medium=rss&utm_campaign=simulated-war-2
 
 # Andrew Clark April 01 2012
+# Modifications by Emmet Murphy December 2017
 
 library(sets)
 
