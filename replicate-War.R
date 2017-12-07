@@ -13,7 +13,7 @@ set.seed(1068)
 games <- data.frame(id=numeric(), strength=numeric(),strength_pct=numeric(), aces=numeric(),faces=numeric(),deuces=numeric(),plays=numeric(),infinite=logical(),result=character())
 deckSizes <- data.frame(id=numeric(),play=numeric(),p1Cards=numeric())
 i <- 1
-game_count <- 10000
+game_count <- 100
 for (i in 1:game_count) {
     # create a regular deck.
     # All suits are equivalent so there will be four of each number
