@@ -4,8 +4,8 @@ library(plyr)
 library(dplyr)
 
 # plot number of cards in hand over the course of games
-deck_sizes <- read.csv("deckSizes10000random.csv")
-games <- read.csv("games10000random.csv")
+deck_sizes <- read.csv("deckSizes100random.csv")
+games <- read.csv("games100random.csv")
 merged = merge(deck_sizes, games, by = 'id')
 merged$cards = merged$p1Cards
 wins <- merged[merged$result=='W',]
@@ -32,19 +32,17 @@ merged$nextCards <- lead(merged$cards, 1)
 counts <- ddply(merged, .(merged$cards, merged$nextCards))
 names(counts) <- c("cards", "nextCards", "Freq")
 M <- matrix(0L, nrow=53, ncol=53)
+# When have 0 or 52 cards, probability of keeping that many is 1
+M[1,1] = 1.0
 M[53,53] = 1.0
 # populate the matrix
 # value in cell i,j is the likelihood of moving from i to j
-for (i in 1:52) {
+for (i in 2:52) {
     for (j in 1:53) {
         if (i == j) {
-            if (i == 1) {
-                M[i,j] <- 1.0
-            } else {
-                # we resolve ties within a play, so the number
-                # of cards always changes between plays
-                M[i,j] <- 0.0
-            }
+            # we resolve ties within a play, so the number
+            # of cards always changes between plays
+            M[i,j] <- 0.0
         } else {
             numerator <- counts[counts$cards == i & counts$nextCards == j,]
             denominator <- handCountFreq[handCountFreq$cards == i,]$freq
@@ -55,3 +53,21 @@ for (i in 1:52) {
 }
 
 write.csv(M, "markov_matrix.csv")
+
+# predict the probability of a hand winning based on number of cards
+M2 <- M %*% M
+M4 <- M2 %*% M2
+M8 <- M4 %*% M4
+winProbability <- function(numCards) {
+    # create a vector for the starting position
+    v <- numeric(53)
+    v[numCards + 1] = 1
+    
+    # multiply by the Markov Matrix to get the probability of winning
+    Mprob <- M8 %*% v
+    return (Mprob[53])
+}
+winProbability(26)
+winProbability(1)
+winProbability(51)
+winProbability(52)
