@@ -37,7 +37,7 @@ probTransit <- function(p, q) {
     x <- p - 1; y <- q -1
     numerator <- counts[counts$cards == x & counts$nextCards == y,]
     denominator <- handCountFreq[handCountFreq$cards == x,]$freq
-    print(paste(x, y, "numerator:", nrow(numerator), "denominator:", denominator))
+    #print(paste(p, q, "numerator:", nrow(numerator), "denominator:", denominator))
     prob <- (nrow(numerator) / denominator)
     if (is.na(prob) || is.nan(prob)) {
         prob <- 0
@@ -49,21 +49,20 @@ M <- matrix(0L, nrow=53, ncol=53)
 # Fill the transitions to 0 and 52 cards outside the main loop, since the 
 # transitions are only one-way
 for (j in 2:52) {
-    M[j,1] <- probTransit(j, 1)
-    M[j,53] <- probTransit(j, 53)
+    M[1,j] <- probTransit(j, 1)
+    M[53,j] <- probTransit(j, 53)
 }
-# When have 0 or 52 cards, probability of keeping that many is 1 as the game ends
-# But the column needs to sum to 1, so we set the initial probability to whatever remains
-M[1,1] = 1.0 - sum(M[,1])
-M[53,53] = 1.0 - sum(M[,53])
+# When have 0 or 52 cards, probability of keeping that many is 1 
+M[1,1] = 1.0 
+M[53,53] = 1.0 
 
 # populate the matrix
 # value in cell i,j is the likelihood of moving from i to j
 for (i in 2:52) {
     for (j in 2:52) {
         if (i == j) {
-            # we resolve ties within a play, so the number
-            # of cards always changes between plays
+            # we resolve ties within a play, so the number of cards always changes 
+            # between plays (i.e. probability of staying on a card count is 0)
             M[i,j] <- 0.0
         } else {
             M[i,j] <- probTransit(i, j)
@@ -82,20 +81,3 @@ for (j in 1:53) {
 
 write.csv(M, "markov_matrix.csv")
 
-# predict the probability of a hand winning based on number of cards
-M2 <- M %*% M
-M4 <- M2 %*% M2
-M8 <- M4 %*% M4
-winProbability <- function(numCards) {
-    # create a vector for the starting position
-    v <- numeric(53)
-    v[numCards + 1] = 1
-    
-    # multiply by the Markov Matrix to get the probability of winning
-    Mprob <- M8 %*% v
-    return (Mprob[53])
-}
-winProbability(26)
-winProbability(1)
-winProbability(51)
-winProbability(52)
