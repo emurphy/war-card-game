@@ -31,25 +31,53 @@ handCountFreq <- plyr::count(merged, vars='cards')
 merged$nextCards <- lead(merged$cards, 1)
 counts <- ddply(merged, .(merged$cards, merged$nextCards))
 names(counts) <- c("cards", "nextCards", "Freq")
+# The probability of transitioning from column p to column q
+probTransit <- function(p, q) {
+    # Columns p, q correspond to card counts p-1, q-1
+    x <- p - 1; y <- q -1
+    numerator <- counts[counts$cards == x & counts$nextCards == y,]
+    denominator <- handCountFreq[handCountFreq$cards == x,]$freq
+    print(paste(x, y, "numerator:", nrow(numerator), "denominator:", denominator))
+    prob <- (nrow(numerator) / denominator)
+    if (is.na(prob) || is.nan(prob)) {
+        prob <- 0
+    }
+    return (prob)
+}
+
 M <- matrix(0L, nrow=53, ncol=53)
-# When have 0 or 52 cards, probability of keeping that many is 1
-M[1,1] = 1.0
-M[53,53] = 1.0
+# Fill the transitions to 0 and 52 cards outside the main loop, since the 
+# transitions are only one-way
+for (j in 2:52) {
+    M[j,1] <- probTransit(j, 1)
+    M[j,53] <- probTransit(j, 53)
+}
+# When have 0 or 52 cards, probability of keeping that many is 1 as the game ends
+# But the column needs to sum to 1, so we set the initial probability to whatever remains
+M[1,1] = 1.0 - sum(M[,1])
+M[53,53] = 1.0 - sum(M[,53])
+
 # populate the matrix
 # value in cell i,j is the likelihood of moving from i to j
 for (i in 2:52) {
-    for (j in 1:53) {
+    for (j in 2:52) {
         if (i == j) {
             # we resolve ties within a play, so the number
             # of cards always changes between plays
             M[i,j] <- 0.0
         } else {
-            numerator <- counts[counts$cards == i & counts$nextCards == j,]
-            denominator <- handCountFreq[handCountFreq$cards == i,]$freq
-            #print(paste(i, j, "numerator:", numerator, "denominator:", denominator))
-            M[i,j] <-  nrow(numerator) / denominator
+            M[i,j] <- probTransit(i, j)
         }       
     }
+}
+# Check the Markov matrix invariant that each column sums to 1
+for (j in 1:53) {
+    #M[is.nan(M)] = 0
+    #M[is.na(M)] = 0
+    s <- sum(M[,j]) 
+    if (s != 1) {
+        print(paste("Column", j, "sums to", s, ", not the expected 1"))
+    } 
 }
 
 write.csv(M, "markov_matrix.csv")
