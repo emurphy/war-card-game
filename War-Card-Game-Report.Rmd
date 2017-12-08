@@ -27,7 +27,7 @@ Our goal is to predict the probability of a hand winning in $n$ number of plays,
 3. Predict a hand's probability of winning 
 
 ### Part 1: Simulate and Explore the Data
-In order to train our Markov process, we first simulate 10,000 games of War (see the [Appendix](#appendix) for details). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes. 
+In order to train our Markov process, we first simulate 100 games of War (see the [Appendix](#appendix) for details). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes. 
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
@@ -39,8 +39,8 @@ library(readr)
 
 ```{r message=FALSE, warning=FALSE}
 # plot number of cards in hand over the course of games
-deck_sizes <- read_csv("no-ties/deckSizes10000random.csv.gz")
-games <- read_csv("no-ties/games10000random.csv")
+deck_sizes <- read_csv("deckSizes100random.csv")
+games <- read_csv("no-ties/games100random.csv")
 gamePlays = merge(deck_sizes, games, by = 'id')
 gamePlays$cards = gamePlays$p1Cards
 gamePlays$Game = gamePlays$id
@@ -142,7 +142,7 @@ data.frame(OneIn10 = winProbability(M, 1,10), FiftyOneInNext=winProbability(M,51
            TwentySixIn20=winProbability(M,26,20))
 ```
 
-The sample values show the probability of starting with: 
+The sample values above show the probability of starting with: 
 
 - 1 card and winning in 10 plays
 - 51 cards and winning on the very next play
@@ -248,7 +248,7 @@ There are two alternative solutions to this:
 
 ### Solution 1
 
-The original author settled for solution #1 and interrupted the loop after an arbitrary, fixed number of plays (5000). For our purposes this is unsatisfactory, as the repetition involved in ties could skew the frequency distribution of our Markov process. In order to recognize the stalemate situation earlier, we derived a solution from the definition of the limit of a sequence $s_n$. 
+The original author settled for solution #1 and interrupted the loop after an arbitrary, fixed number of plays (5000). For our purposes this solution is unsatisfactory, as the repetition involved in ties could skew the frequency distribution of our Markov process. In order to recognize the stalemate situation earlier, we derived a solution from the definition of the limit of a sequence $s_n$. 
 
 $$\forall \epsilon > 0,\; \exists N  \;\text{such that}\; \forall n > N \;|s_n -s| < \epsilon$$
 
@@ -289,9 +289,138 @@ else if (length(p1Cards) > 5000) {
 
 Infinite games are, to the relief of many a War player, very unlikely in practice. They strike only in simulations, because the infinite condition arises only when cards maintain their ordering after the original deal. 
 
-The only aspect of the War card game where a player influences the outcome is in the replacement of cards to the bottom of her deck after a winning play. If the cards are replaced in the same, deterministic order every time (as is unlikely to happen with humans, but likely to happen in a naive computer simulation), then certain original hand configurations can result in an infinite cycle. 
+To understand how this situation arises, first consider that the only aspect of the War card game where a player influences the outcome is in the replacement of cards to the bottom of her deck after a winning play. If the cards are replaced in the same, deterministic order every time (as is unlikely to happen with humans, but likely to happen in a naive computer simulation), then certain original hand configurations can result in an infinite cycle. 
 
-A solution that closely resembles what happens in real life is to randomize the order of cards when replacing them to the bottom of the deck. We made that improvement for the simulated data used in this report. 
+A solution that closely resembles what happens in real life is to randomize the order of cards when replacing them to the bottom of the deck. We made that improvement for the simulated data used in this report, using the R function `sample`. 
+
+```{r, warning=FALSE, message=FALSE}
+# Code for replicating War card Game
+# from https://www.r-bloggers.com/simulated-war/
+# and http://www.premiersoccerstats.com/wordpress/?p=825&utm_source=rss&utm_medium=rss&utm_campaign=simulated-war-2
+
+# Andrew Clark April 01 2012
+# Modifications by Emmet Murphy December 2017
+
+library(sets)
+
+# make simulation replicable
+set.seed(1068)
+
+games <- data.frame(id=numeric(), strength=numeric(),strength_pct=numeric(), aces=numeric(),faces=numeric(),deuces=numeric(),plays=numeric(),infinite=logical(),result=character())
+deckSizes <- data.frame(id=numeric(),play=numeric(),p1Cards=numeric())
+i <- 1
+game_count <- 100
+for (i in 1:game_count) {
+    # create a regular deck.
+    # All suits are equivalent so there will be four of each number
+    deck <- rep(2:14,4)
+    deck_strength <- sum(deck)
+    
+    assign("p1", sample(deck,26, replace=FALSE))
+    
+    diffs <- gset_difference(as.gset(deck), as.gset(p1))
+    # create vector
+    p2 <- rep(unlist(diffs), times=gset_memberships(diffs))
+    # this produces the right cards but in order so randomize
+    assign("p2", sample(p2,26, replace=FALSE))
+    #p1
+    # [1]  3  3  6 14 10 13  3 10 12  5 11  8  2  5  8  4 10  5  8  4
+    # [21]  8  7  7  7  9 14
+    #p2
+    # [1] 12  6  9  5  9  9 13  4  2 14  4 13 13  6  6 11  7 11 12  2
+    # [21] 10  3  2 11 12 14
+    p1Cards <- length(p1)
+    strength <- sum(p1) # 196 total of players is always 416 so p2 has stronger hand
+    strength_pct <- strength / deck_strength
+    aces <- sum(p1==14) # 2
+    faces <- sum(p1 >= 10 && p1 <=13)
+    deuces <- sum(p1==2) # 1
+    result <- "N"
+
+    game <- data.frame(id=i, strength=strength,strength_pct=strength_pct,aces=aces,faces=faces,deuces=deuces,result=result, plays=0, infinite=FALSE,stringsAsFactors=FALSE)
+    
+    draw <- c(p1[1],p2[1])
+    
+    booty <- c()
+    
+    repeat { # for each match of cards
+        game$plays <- game$plays + 1
+        if (p1[1]>p2[1]) {
+            if (p1[1]==14&p2[1]==2){ #  ace(14) vs a 2
+                p2 <- c(p2[-1],sample(draw))
+                p1 <- p1[-1]
+            } else {
+                p1 <- c(p1[-1],sample(draw))
+                p2 <- p2[-1]
+            }
+        } else if (p2[1]>p1[1]) {
+            if (p2[1]==14&p1[1]==2){
+                p1 <- c(p1[-1],sample(draw))
+                p2 <- p2[-1]
+            } else {
+                p2 <- c(p2[-1],sample(draw))
+                p1 <- p1[-1]
+            }
+        } else {
+            while (p1[1]==p2[1]) {
+                
+                # need at least 5 cards to play game
+                if (length(p1)<5|length(p2)<5) {
+                    break
+                }
+                # displayed card plus next three from each player
+                booty <- c(booty,p1[1],p1[2],p1[3],p1[4],p2[1],p2[2],p2[3],p2[4])
+                
+                #  remove these cards from the p1,p2 so that new p1[1] is next shown
+                p1 <- p1[-(1:4)]
+                p2 <- p2[-(1:4)]
+            }
+            
+            draw <- c(p1[1],p2[1])
+            
+            if (p1[1]>p2[1]) {
+                p1 <- c(p1[-1],sample(booty),sample(draw))
+                p2 <- p2[-1]
+            } else {
+                p2 <- c(p2[-1],sample(booty),sample(draw))
+                p1 <- p1[-1]
+            }
+        }
+        #  battle over
+        
+        # keep running total of deck size
+        p1Cards <- c(p1Cards,length(p1))
+        
+        # test for game over
+        if(length(p1)==52 || length(p1)==0){
+            break
+        }
+        
+        # reset for next iteration
+        booty <- c()
+        draw <- c(p1[1],p2[1])
+    }
+    # war over
+    
+    if (length(p1) == 0) {
+        game$result = "L"
+    } else if (length(p1) == 52) {
+        game$result = "W"
+    } else if (game$infinite) {
+        game$result = "T"
+    } else {
+        stop(paste("Unclear result with p1 cards: ", length(p1)))
+    }
+    
+    games <- rbind(games,game)
+    deckSize <- data.frame(id=i,play=1:length(p1Cards),p1Cards=p1Cards)
+    deckSizes <- rbind(deckSizes,deckSize)
+}
+
+# save for later analysis
+write.csv(games,paste("games", game_count, "random.csv", sep=''))
+write.csv(deckSizes,paste("deckSizes", game_count, "random.csv", sep=''))
+```
 
 ## Summary of Requirements Met 
 
