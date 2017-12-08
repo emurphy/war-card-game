@@ -3,7 +3,7 @@ drops <- c("X")
 options(scipen = 999) # disable scientific notation
 M1 <- as.matrix(df[ , !(names(df) %in% drops)])
 
-# predict the probability of a hand with c number of cards winning after n plays
+# predict the probability of a hand with x number of cards winning after n plays
 winProbability <- function(M, numPlays, numCards) {
     # create a vector for the starting position
     v <- numeric(53)

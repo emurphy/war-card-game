@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# War Simulations: For Card Game and for North Korea
+# War Simulations: From Card Game to Korea
 
 ## Overview
 
@@ -20,7 +20,14 @@ The second part turns toward a more serious application: Using Bayesian updating
 
 ## Generating a Markov Process
 
-Our goal is to predict the probability of a hand winning in $n$ number of plays, given $x$ number of cards in the hand. In order to train our Markov process, we first simulate 10,000 games of War. Details on that are in the [Appendix](#appendix). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes.
+Our goal is to predict the probability of a hand winning in $n$ number of plays, given $x$ number of cards in the hand. We accomplish it in three steps: 
+
+1. Simulate games, collect and explore the data 
+2. Model the probabilities as a Markov Chain 
+3. Predict a hand's probability of winning 
+
+### Part 1: Simulate and Explore the Data
+In order to train our Markov process, we first simulate 10,000 games of War. Details on that are in the [Appendix](#appendix). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes. 
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
@@ -30,20 +37,117 @@ library(dplyr)
 library(readr)
 ```
 
-
 ```{r message=FALSE, warning=FALSE}
 # plot number of cards in hand over the course of games
 deck_sizes <- read_csv("no-ties/deckSizes100random.csv")
 games <- read_csv("no-ties/games100random.csv")
 gamePlays = merge(deck_sizes, games, by = 'id')
 gamePlays$cards = gamePlays$p1Cards
+gamePlays$Game = gamePlays$id
 wins <- gamePlays[gamePlays$result=='W',]
 losses <- gamePlays[gamePlays$result=='L',]
 ties <- gamePlays[gamePlays$result=='T',]
-p1 <- ggplot(data=wins, aes(x=play, y=cards)) + geom_line(color='#009E73', size=0.3) + ggtitle(paste(length(unique(wins[,'id'])), "Wins")) + xlab('Number of Plays') + ylab("Cards in Hand")
-p2 <- ggplot(data=losses, aes(x=play, y=cards)) + geom_line(color='#D55E00', size=0.3) + ggtitle(paste(length(unique(losses[,'id'])), "Losses")) + xlab('Number of Plays') + ylab("Cards in Hand")
+p1 <- ggplot(data=wins, aes(x=play, y=cards)) + geom_line(aes(color=Game), size=0.3) +
+    ggtitle(paste("Plays per Game in", length(unique(wins[,'id'])), "Wins")) + 
+    xlab('Number of Plays') + ylab("Cards in Hand")
+p2 <- ggplot(data=losses, aes(x=play, y=cards)) + geom_line(aes(color=Game), size=0.3) +
+    ggtitle(paste("Plays per Game in", length(unique(losses[,'id'])), "Losses")) + 
+    xlab('Number of Plays') + ylab("Cards in Hand")
 grid.arrange(p1, p2, ncol=1)
 ```
+
+To a player it can seem like a game of War will go on forever (as discussed in more detail in the [Appendix](#appendix)). The following summarizes how many plays our simulated games require in order to converge on a winner: 
+
+```{r}
+summary(games$plays)
+```
+
+### Part 2: Generate a Markov Process
+
+The Markov chain calls for a square matrix $M$ in $\mathbb{R^{53}}$ (there are $52$ cards and a $+1$ for the possibility of a hand ending with $0$ cards). Each cell in row $i$, column $j$ has a probability of a hand going from $i-1$ number of cards to $j-1$ number of cards. 
+
+The probability of a hand with $x$ cards winning in $n$ number of plays is then:
+$$M^n \vec{e_x}$$ 
+
+Following is the script to generate the Markov matrix $M$: 
+
+```{r}
+# generate Markov matrix
+# for probabilities, this is the denominator -- frequency of each hand size
+handCountFreq <- plyr::count(gamePlays, vars='cards')
+
+# the numerator is trickier -- need to count how many times a hand size follows any given hand size
+gamePlays$nextCards <- lead(gamePlays$cards, 1)
+counts <- ddply(gamePlays, .(gamePlays$cards, gamePlays$nextCards))
+names(counts) <- c("cards", "nextCards", "Freq")
+# The probability of transitioning from column p to column q
+probTransit <- function(p, q) {
+    # Columns p, q correspond to card counts p-1, q-1
+    x <- p - 1; y <- q -1
+    numerator <- counts[counts$cards == x & counts$nextCards == y,]
+    denominator <- handCountFreq[handCountFreq$cards == x,]$freq
+    prob <- (nrow(numerator) / denominator)
+    if (is.na(prob) || is.nan(prob)) {
+        prob <- 0
+    }
+    return (prob)
+}
+
+M <- matrix(0L, nrow=53, ncol=53)
+# Fill the transitions to 0 and 52 cards outside the main loop, since the 
+# transitions are only one-way
+for (j in 2:52) {
+    M[1,j] <- probTransit(j, 1)
+    M[53,j] <- probTransit(j, 53)
+}
+# When have 0 or 52 cards, probability of keeping that many is 1 
+M[1,1] = 1.0 
+M[53,53] = 1.0 
+
+# populate the matrix
+# value in cell i,j is the likelihood of moving from i to j
+for (i in 2:52) {
+    for (j in 2:52) {
+        if (i == j) {
+            # we resolve ties within a play, so the number of cards always changes 
+            # between plays (i.e. probability of staying on a card count is 0)
+            M[i,j] <- 0.0
+        } else {
+            M[i,j] <- probTransit(i, j)
+        }       
+    }
+}
+```
+
+### Part 3: Prediction
+
+Generating the Markov matrix is the difficult part. Predicting a hand's probability of winning can then be coded as a function that implements the matrix multiplication $M^n \vec{e_x}$.
+
+```{r}
+# predict the probability of a hand with x number of cards winning after n plays
+winProbability <- function(M, numCards, numPlays) {
+    # create a vector for the starting position
+    v <- numeric(53)
+    v[numCards + 1] = 1
+    
+    # multiply by the Markov Matrix to get the probability of winning
+    for (i in 1:numPlays) {
+        M <- M %*% M
+    }
+    Mprob <- M %*% v
+    return (Mprob[53])
+}
+data.frame(OneIn10 = winProbability(M, 1,10), FiftyOneInNext=winProbability(M,51,1),
+           TwentySixIn20=winProbability(M,26,20))
+```
+
+The sample values show the probability of starting with: 
+
+- 1 card and winning in 10 plays
+- 51 cards and winning on the very next play
+- 26 cards and winning in the next 20 plays
+
+Further research would be to incorporate hand strength when calculating the probability, a non-trivial improvement, as it calls for extending the model to include conditional probabilities.
 
 ## Real World Application: Bayesian Updating in a State of War
 
