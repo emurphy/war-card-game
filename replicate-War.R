@@ -100,39 +100,12 @@ for (i in 1:game_count) {
             break
         }
         
-        limit = length(deck) / 2
-        lastCycleHandSizes = tail(p1Cards,length(deck))
-        last10CycleHandSizes = tail(p1Cards,length(deck)*10)
-        # avoid infinite loop with an approach deriving from the "limit of a sequence" definition
-        # > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
-        # In this case, if in the last 26 plays the number of cards are within 1
-        # of the limit of 26 (half the deck), the game has converged to the limit (a tie)
-        # and will last forever if we let it.
-        #if (length(p1Cards) > length(deck) && all(lastCycleHandSizes %in% ((limit-1):(limit+1)))) {
-        #    print(paste("Infinite game:", game$id, "plays:", game$plays, 
-        #                "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
-        #    game$infinite=TRUE
-        #    break
-        #} else
-        if (length(p1Cards) > length(deck) && max(last10CycleHandSizes) - min(last10CycleHandSizes) == 1) {
-            print(paste("Infinite game caught by 10-cycle limit, game:", game$id, ", plays:", 
-                        game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
-                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
-            game$infinite=TRUE
-            break
-        } else if (length(p1Cards) > 10000) {
-            print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays, "last card counts:", paste(c(lastCycleHandSizes), collapse=','), 
-                        "Original hand 1:", paste(c(p1), collapse=','), "Original hand 2:", paste(c(p2), collapse=',')))
-            game$infinite=TRUE
-            break
-        }
         # reset for next iteration
         booty <- c()
         draw <- c(p1[1],p2[1])
         
     }
     # war over
-    
     
     if (length(p1) == 0) {
         #p1Cards <-   -(p1Cards-52)

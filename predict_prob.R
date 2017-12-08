@@ -17,29 +17,14 @@ winProbability <- function(M, numPlays, numCards) {
     return (Mprob[53])
 }
 
-M2 <- M1 %*% M1
-sum(M[,1])
-M2[1,1]
-v1 <- numeric(53)
-v1[1] <- 1
-Mprob <- M2 %*% v
-Mprob[1,1]
-Mprob[26,1]
-M4 <- M2 %*% M2
-M8 <- M4 %*% M4
-v26 <- numeric(53)
-v26[27] <- 1
-M8 %*% v26
-M32 <- M8 %*% M8 %*% M8 %*% M8
-M32 %*% v26
-winProbability(M1, 10, 26)
-winProbability(M1, 100, 26)
-winProbability(M1, 1000, 26)
-winProbability(M1, 1, 1)
-winProbability(M1, 10, 1)
-winProbability(M1, 1000, 1)
-winProbability(M1, 1, 51)
-winProbability(M1, 10, 51)
-winProbability(M1, 100, 51)
-winProbability(M1, 10, 13)
+# probability of coming back from way behind
+winProbability(M1, 30, 2)
+
+# probability of winning when way ahead
+winProbability(M1, 2, 50)
+winProbability(M1, 10, 50)
+winProbability(M1, 100, 50)
+
+# less extreme
+winProbability(M1, 30, 13)
 winProbability(M1, 10, 39)
