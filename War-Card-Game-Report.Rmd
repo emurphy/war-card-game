@@ -305,6 +305,7 @@ $$\lim_{n\to\infty} p_n = s,  s\in{0,1}$$
 These two properties can be observed using the following R code, where we simulate different $p_n$ sequences that draw from a range of underlying differences between the distribution of weapons possessed by each side. 
  
 ```{r}
+library(lattice)
 #define multiple underlying distributions ranging between NK being a lot weaker, the same as, or a lot stronger than the US
 
 #given US distribution of 1 to 10, define 11 different distributions for NK:
