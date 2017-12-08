@@ -27,7 +27,7 @@ Our goal is to predict the probability of a hand winning in $n$ number of plays,
 3. Predict a hand's probability of winning 
 
 ### Part 1: Simulate and Explore the Data
-In order to train our Markov process, we first simulate 10,000 games of War. Details on that are in the [Appendix](#appendix). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes. 
+In order to train our Markov process, we first simulate 10,000 games of War (see the [Appendix](#appendix) for details). The simulations generate and store data on starting hand strength, the number of cards in a player's hand after each play, etc. The following script reads in the data and plots the number of cards by the number of plays. The plots give a sense of the dispersion of outcomes. 
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(ggplot2)
@@ -39,8 +39,8 @@ library(readr)
 
 ```{r message=FALSE, warning=FALSE}
 # plot number of cards in hand over the course of games
-deck_sizes <- read_csv("no-ties/deckSizes100random.csv")
-games <- read_csv("no-ties/games100random.csv")
+deck_sizes <- read_csv("no-ties/deckSizes10000random.csv.gz")
+games <- read_csv("no-ties/games10000random.csv")
 gamePlays = merge(deck_sizes, games, by = 'id')
 gamePlays$cards = gamePlays$p1Cards
 gamePlays$Game = gamePlays$id
@@ -64,7 +64,7 @@ summary(games$plays)
 
 ### Part 2: Generate a Markov Process
 
-The Markov chain calls for a square matrix $M$ in $\mathbb{R^{53}}$ (there are $52$ cards and a $+1$ for the possibility of a hand ending with $0$ cards). Each cell in row $i$, column $j$ has a probability of a hand going from $i-1$ number of cards to $j-1$ number of cards. 
+The Markov chain calls for a $53$ x $53$ matrix $M$ (there are $52$ cards and a $+1$ for the possibility of a hand ending with $0$ cards). Each cell in row $i$, column $j$ has a probability of a hand going from $i-1$ number of cards to $j-1$ number of cards. 
 
 The probability of a hand with $x$ cards winning in $n$ number of plays is then:
 $$M^n \vec{e_x}$$ 
@@ -76,7 +76,8 @@ Following is the script to generate the Markov matrix $M$:
 # for probabilities, this is the denominator -- frequency of each hand size
 handCountFreq <- plyr::count(gamePlays, vars='cards')
 
-# the numerator is trickier -- need to count how many times a hand size follows any given hand size
+# the numerator is trickier -- need to count how many times a hand size 
+# follows any given hand size
 gamePlays$nextCards <- lead(gamePlays$cards, 1)
 counts <- ddply(gamePlays, .(gamePlays$cards, gamePlays$nextCards))
 names(counts) <- c("cards", "nextCards", "Freq")
@@ -121,7 +122,7 @@ for (i in 2:52) {
 
 ### Part 3: Prediction
 
-Generating the Markov matrix is the difficult part. Predicting a hand's probability of winning can then be coded as a function that implements the matrix multiplication $M^n \vec{e_x}$.
+Generating the Markov matrix is the difficult part. Predicting a hand's probability of winning then simply calls for a function to perform the matrix multiplication $M^n \vec{e_x}$.
 
 ```{r}
 # predict the probability of a hand with x number of cards winning after n plays
@@ -238,4 +239,76 @@ These plots illustrate a key takeaway that, with underlying distributions that c
 
 ### Simulating the War Card Game
 
-We are not the first to undertake this exercise, and we started from the R source available from [PremierSoccerStats blog](http://www.premiersoccerstats.com/wordpress/?p=825). But we soon ran into a problem, that we addressed in two ways.
+We are not the first to undertake this exercise, and we started from the R source available from [PremierSoccerStats blog](http://www.premiersoccerstats.com/wordpress/?p=825). But we soon ran into a problem: The code as originally written generates games that result in a stalemate. The game goes on forever, after reaching a point where both players have 26 cards, and from that point on each side wins one play in an infinite, alternating sequence.
+
+There are two alternative solutions to this: 
+
+1. Interrupt the loop and call the game a tie.
+2. Introduce randomness in every play.
+
+### Solution 1
+
+The original author settled for solution #1 and interrupted the loop after an arbitrary, fixed number of plays (5000). For our purposes this is unsatisfactory, as the repetition involved in ties could skew the frequency distribution of our Markov process. In order to recognize the stalemate situation earlier, we derived a solution from the definition of the limit of a sequence $s_n$. 
+
+$$\forall \epsilon > 0,\; \exists N  \;\text{such that}\; \forall n > N \;|s_n -s| < \epsilon$$
+
+Given: 
+
+- $r$ is the range of the number of cards in a hand over the last 52 plays
+- $n$ is the running total number of plays 
+
+Define the sequence $s_n$ as:
+
+$$s_n = \frac{n^{|2-r|}}{n^{\frac{2}{r}}} $$
+
+Then within 52 plays after reaching a stalemate condition, the sequence converges, approaching a limit of 0. 
+
+While we drew inspiration from this lesson in real analysis, the resulting R code improves readability by maintaining the discrete values.
+
+```{r eval=FALSE}
+limit = length(deck) / 2
+# avoid infinite loop with an approach deriving from the "limit of a sequence" definition
+# > For all epsilon, there exists an N such that for all n > N, |s_n - s| < epsilon
+# In this case, if in the last 52 plays the number of cards are within 1
+# of the limit of 26 (half the deck), the game has converged to the limit (a tie)
+# and will last forever if we let it.
+if (length(p1Cards) > length(deck) && all(tail(p1Cards,length(deck)) %in% ((limit-1):(limit+1)) )) {
+  print(paste("Infinite game:", game$id, ", plays:", game$plays))
+  game$infinite=TRUE
+  break
+}
+# the original circuit breaker, retained here to verify our improvement
+else if (length(p1Cards) > 5000) {
+  print(paste("Infinite game not caught by limit, game:", game$id, ", plays:", game$plays))
+  game$infinite=TRUE
+  break
+}
+```
+
+### Solution 2
+
+Infinite games are, to the relief of many a War player, very unlikely in practice. They strike only in simulations, because the infinite condition arises only when cards maintain their ordering after the original deal. 
+
+The only aspect of the War card game where a player influences the outcome is in the replacement of cards to the bottom of her deck after a winning play. If the cards are replaced in the same, deterministic order every time (as is unlikely to happen with humans, but likely to happen in a naive computer simulation), then certain original hand configurations can result in an infinite cycle. 
+
+A solution that closely resembles what happens in real life is to randomize the order of cards when replacing them to the bottom of the deck. We made that improvement for the simulated data used in this report. 
+
+## Summary of Requirements Met 
+
+### Basic
+
+- Topic is related to linear algebra and real analysis
+- The script is commented well enough to be reasonably self-explanatory.
+- The script generates at least one nice-looking graphic.
+- The script is uploaded before noon, and both team members participate in the presentation session.
+
+### Additional
+
+- Project is related to a topic that you have studied in another course this term.
+- Uses an R function that has not appeared in any Math 23 lecture script.
+- Uses a random-number function and a for loop.
+- Incorporates ideas both from linear algebra and from real analysis.
+- Defines and uses at least two functions.
+- Includes two related but distinct topics.
+- Professional looking software engineering
+- Integrating well-written LaTeX with R code in a final write-up via R markdown
